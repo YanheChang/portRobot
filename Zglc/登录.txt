@@ -1,0 +1,50 @@
+*** Settings ***
+Suite Setup       获取cookie    phone    pwd
+Suite Teardown    Delete All Sessions
+Library           requests
+Library           RequestsLibrary
+Library           json
+Library           Collections
+Library           String
+Library           ../Lib/GetCookie/GetCookie.py
+
+*** Variables ***
+${host}           https://m.zhugelicai.com
+
+*** Test Cases ***
+profile
+    获取cookie    15010130030    65f6ac95a1edc0b85c8cbbac7eb0b9dc
+    ${response}    Get Request    ceshi    /api/user/profile
+    ${var}    To Json    ${response.content}
+    log    ${var}
+    log    ${var['code']}
+    log    ${var['msg']}
+
+标的列表
+    ${response}    Get Request    ceshi    /api/account/regular?page=1&num=10&type=norepayment
+    ${var}    To Json    ${response.content}
+    log    ${var}
+    log    ${var['code']}
+    log    ${var['data'][0]['id']}
+    ${bidlist_id}    Set Variable    ${var['data'][0]['id']}
+    Set Suite Variable    ${bidlist_id}
+
+标的详情
+    ${response}    Get Request    ceshi    /api/account/regular?page=1&num=10&id=${bidlist_id}
+    ${var}    To Json    ${response.content}
+    log    ${var}
+    log    ${var['code']}
+     Should Be Equal As Strings    ${var['msg']}    ok
+    Should Be Equal As Numbers    ${var['code']}    0
+
+*** Keywords ***
+获取cookie
+    [Arguments]    ${phone}    ${pwd}
+    ${header}    Create Dictionary    Content-Type=appliction/json
+    ${param}    Create Dictionary    phone=${phone}    password=${pwd}
+    ${url}    Create Session    ceshi    ${host}    headers=${header}
+    ${response}    Post Request    ceshi    /api/user/pwd_login    params=${param}
+    ${var}    To Json    ${response.content}
+    log    ${response.headers['set-cookie']}
+    ${cookie}    getCookie    ${response.headers['set-cookie']}
+    Set Global Variable    ${cookie}

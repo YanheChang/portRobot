@@ -1,0 +1,128 @@
+*** Settings ***
+Suite Setup       获取cookie    phone    pwd
+Suite Teardown    Delete All Sessions
+Library           requests
+Library           RequestsLibrary
+Library           json
+Library           Collections
+Library           String
+Library           ../Lib/GetCookie/GetCookie.py
+Library           DateTime
+
+*** Variables ***
+${host}           https://m.zhugelicai.com
+
+*** Test Cases ***
+农场金豆浇水
+    ${time}    Get Current Date
+    log    ${time}
+    ${date} =    Convert Date    ${time}    epoch
+    log    ${date}
+    #Should Be Equal    ${date}    ${1401267903.111}
+
+集市公告
+    获取cookie    15010130030    65f6ac95a1edc0b85c8cbbac7eb0b9dc
+    ${response}    Get Request    ceshi    /api/farm/notice
+    ${var}    To Json    ${response.content}
+    log    ${var}
+    log    ${var['data']}
+    log    ${var['msg']}
+    Should Be Equal As Strings    ${var['msg']}    ok
+    Should Be Equal As Numbers    ${var['code']}    0
+    Should Be Equal As Strings    ${var['data']['notice']}    None
+
+世界频道
+    获取cookie    15010130030    65f6ac95a1edc0b85c8cbbac7eb0b9dc
+    ${response}    Get Request    ceshi    /api/market/world_channel
+    ${var}    To Json    ${response.content}
+    log    ${var}
+    log    ${var}
+    log    ${var['data']}
+    log    ${var['msg']}
+    Should Be Equal As Strings    ${var['msg']}    ok
+    Should Be Equal As Numbers    ${var['code']}    0
+    Should contain    ${var['data']}    温暖@久远卖出了1个大金豆，获得2.47元
+
+集市首页
+    获取cookie    15010130030    65f6ac95a1edc0b85c8cbbac7eb0b9dc
+    ${response}    Get Request    ceshi    /api/market/home_page
+    ${var}    To Json    ${response.content}
+    log    ${var}
+    log    ${var}
+    log    ${var['data']}
+    log    ${var['msg']}
+    Should Be Equal As Strings    ${var['msg']}    ok
+    Should Be Equal As Numbers    ${var['code']}    0
+    Should Be Equal As Strings    ${var['data']['name']}    常燕贺
+    Should Contain    ${var['data']['list'][0]['name']}    大金豆
+
+浇水
+    获取cookie    15010130030    65f6ac95a1edc0b85c8cbbac7eb0b9dc
+    ${response}    Post Request    ceshi    /api/farm/watering
+    ${var}    To Json    ${response.content}
+    log    ${var}
+    Should Be Equal As Strings    ${var['msg']}    主人,今天浇过水了,明天记得来给我浇水哦~
+    Should Be Equal As Strings    ${var['code']}    MS1002
+    Run Keyword IF    0<${var['data']['grow']}<3    log    ok
+    Run Keyword IF    0<${var['data']['total']}<=100    log    ok
+
+重复浇水
+    获取cookie    15010130030    65f6ac95a1edc0b85c8cbbac7eb0b9dc
+    ${response}    Post Request    ceshi    /api/farm/watering
+    ${var}    To Json    ${response.content}
+    log    ${var}
+    Should Be Equal As Strings    ${var['msg']}    主人,今天浇过水了,明天记得来给我浇水哦~
+    Should Be Equal As Strings    ${var['code']}    MS1002
+
+给好友浇水
+    获取cookie    15010130030    65f6ac95a1edc0b85c8cbbac7eb0b9dc
+    ${params}    Create Dictionary    friend=MTEwNTM=
+    ${response}    Post Request    ceshi    /api/farm/water_friend    params=${params}
+    ${var}    To Json    ${response.content}
+    log    ${var}
+    Should Be Equal As Strings    ${var['msg']}    ok
+    Should Be Equal As Strings    ${var['code']}    0
+
+给好友浇水重复
+    获取cookie    15010130030    65f6ac95a1edc0b85c8cbbac7eb0b9dc
+    ${params}    Create Dictionary    friend=MjgyMjU4
+    ${response}    Post Request    ceshi    /api/farm/water_friend    params=${params}
+    ${var}    To Json    ${response.content}
+    log    ${var}
+    Should Be Equal As Strings    ${var['msg']}    已经给Ta浇过水啦~
+    Should Be Equal As Strings    ${var['code']}    MF1028
+
+给好友浇水，好友未播种
+    获取cookie    15010130030    65f6ac95a1edc0b85c8cbbac7eb0b9dc
+    ${params}    Create Dictionary    friend=MjczNjc2
+    ${response}    Post Request    ceshi    /api/farm/water_friend    params=${params}
+    ${var}    To Json    ${response.content}
+    log    ${var}
+    Should Be Equal As Strings    ${var['msg']}    好友还没播种，无法浇水
+    Should Be Equal As Strings    ${var['code']}    MF1051
+
+获取好友列表
+    [Tags]    run
+    获取cookie    15010130030    65f6ac95a1edc0b85c8cbbac7eb0b9dc
+    ${data}    Create Dictionary    page=1    num=20
+    ${response}    Get Request    ceshi    /api/farm/friend_rank    params=${data}
+    ${var}    To Json    ${response.content}
+    log    ${var}
+    log    ${var['data']}
+    log    ${var['msg']}
+    Should Be Equal As Strings    ${var['msg']}    ok
+    Should Be Equal As Numbers    ${var['code']}    0
+    :FOR    ${i}    IN     ${var['data']}
+    \    log    ${i[0]['code']}
+
+*** Keywords ***
+获取cookie
+    [Arguments]    ${phone}    ${pwd}
+    ${header}    Create Dictionary    Content-Type=appliction/json
+    ${param}    Create Dictionary    phone=${phone}    password=${pwd}
+    ${url}    Create Session    ceshi    ${host}    headers=${header}
+    ${response}    Post Request    ceshi    /api/user/pwd_login    params=${param}
+    ${var}    To Json    ${response.content}
+    log    ${response.headers['set-cookie']}
+    ${cookie}    getCookie    ${response.headers['set-cookie']}
+    Set Global Variable    ${cookie}

@@ -1,0 +1,14 @@
+*** Settings ***
+Library           Selenium2Library
+
+*** Test Cases ***
+搜索
+    [Tags]    run
+    Open Browser    https://www.baidu.com/    chrome
+    sleep    2
+    Input text    id=kw    字节跳动
+    sleep    2
+    Click Button    id=su
+    sleep    2
+    Capture Page Screenshot
+    Close Browser

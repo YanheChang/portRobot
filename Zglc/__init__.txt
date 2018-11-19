@@ -1,0 +1,11 @@
+*** Settings ***
+Library           requests
+Library           RequestsLibrary
+Library           json
+Library           Collections
+Library           BuiltIn
+Library           ../Lib/GetCookie/GetCookie.py
+
+*** Variables ***
+
+*** Keywords ***

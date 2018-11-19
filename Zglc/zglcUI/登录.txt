@@ -1,0 +1,16 @@
+*** Settings ***
+Library           Selenium2Library
+
+*** Test Cases ***
+密码登录
+    Open Browser    http://cgtest.zhugelicai.com:8088/index.html    chrome
+    sleep    5
+    Click Button    css=#J_wrap>div.m_nav>div.m_inner>ul>li:nth-child(5)>a.m_button.line
+    sleep    2
+    Click Button    xpath=//*[@id='J_wrap']/div[2]/div/div/div[3]
+    sleep    2
+    Input text    xpath=//*[@id='J_wrap']/div[2]/div/div/div[2]/div[1]/div[1]/input    15010130030
+    Input text    xpath=//*[@id='J_pass']    He@19910624
+    Click Button    xpath=//*[@id='J_wrap']/div[2]/div/div/div[4]/button
+    sleep    2
+    Capture Page Screenshot
